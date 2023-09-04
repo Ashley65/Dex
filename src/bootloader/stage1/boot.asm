@@ -1,6 +1,6 @@
 org 0x7C00
 bits 16
-define ENDL, 0x0A, 0x00 ; end of line
+define ENDL 0x0D, 0x0A ; end of line
 
 ;BIOS Parameter Block
 
@@ -154,7 +154,7 @@ main:
 
     .odd:
         shr ax, 4 ; shift AX right by 4 bits
-        mp .next ; jump to next
+        jmp .next ; jump to next
 
     .even:
         and ax, 0x0FFF ; mask out the top 4 bits of AX
@@ -175,7 +175,7 @@ main:
 
         jmp kernelSegment:kernelOffset ; jump to the kernel
 
-        jump .halt ; jump to halt
+        jmp .halt ; jump to halt
 
 
 
@@ -187,6 +187,7 @@ main:
 puts:
     ; save registers will be used
     push si
+    push bx
     push ax
 
 ; loop through the string until we hit a null byte
@@ -200,6 +201,7 @@ puts:
 
 ; restore registers
 .done:
+    pop bx
     pop ax
     pop si
     ret
@@ -312,14 +314,17 @@ diskReset:
 ; print a string
 msgHello: db 'Hello, World!', ENDL, 0
 msgError: db 'Error!', ENDL, 0
-msgLoading: db Loading, kernel..., ENDL, 0
-kernelSegment: dw 0x2000 ; kernel segment
-kernelOffset: dw 0x0000 ; kernel offset
+msgLoading: db 'Loading kernel...', ENDL, 0
+kernelSegment equ 0x2000 ; kernel segment
+kernelOffset equ 0x0000 ; kernel offset
 kernelCluster: dw 0x0000 ; kernel cluster
-kernelBin: db kernel.bin, 0 ; kernel.bin string
+kernelBin: db 'Stage2.bin', ENDL, 0 ; kernel.bin string
+
 buffer:
-times 512-($-$$) db 0 ; buffer
 
 
-; padding and magic number
-dw 0xAA55
+; boot signature
+
+ times 510-($-$$) db 0
+   db 0x55
+   db 0xAA
